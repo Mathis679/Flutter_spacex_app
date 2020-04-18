@@ -46,6 +46,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<List<Launch>> futureLaunch;
   List<Launch> datas = new List();
+  ScrollController _scrollController = new ScrollController();
+
 
   void showSimpleCustomDialog(BuildContext context, String text, String url) {
     Dialog simpleDialog = Dialog(
@@ -129,6 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return new ListView.builder(
         scrollDirection: Axis.vertical,
         shrinkWrap: true,
+        controller: _scrollController,
         itemCount: datas.length,
         itemBuilder: (BuildContext context, int index) {
           return new Column(
@@ -147,9 +150,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           margin: EdgeInsets.fromLTRB(10, 10, 50, 10),
                           child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
-                              child:
-                              Image.network(datas[index].links.mission_patch,
-                                width: 75, height: 75, fit: BoxFit.contain,))),
+                              child:datas[index].links.mission_patch != null ? Image.network(datas[index].links.mission_patch,
+                                width: 75, height: 75, fit: BoxFit.contain,) : Container()
+                              )),
 
 
                       Flexible(
@@ -201,19 +204,6 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30)),
-          actions: <Widget>[
-            Padding(
-                padding: EdgeInsets.only(right: 20.0),
-                child: GestureDetector(
-                  onTap: () { fetchLaunch(datas.length.toString()); },
-                  child: Icon(
-                    Icons.refresh,
-                    size: 26.0,
-                  ),
-                )
-            ),
-
-          ],
         ),
         body:
             Container(
@@ -232,7 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<List<Launch>> fetchLaunch(String offset) async {
-    final response = await http.get('https://api.spacexdata.com/v3/launches?limit=5&offset='+offset);
+    final response = await http.get('https://api.spacexdata.com/v3/launches?limit=10&offset='+offset);
 
     if (response.statusCode == 200) {
       // If the server did return a 200 OK response,
@@ -258,6 +248,18 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     futureLaunch = fetchLaunch("0");
+    _scrollController.addListener((){
+      if(_scrollController.position.pixels == _scrollController.position.maxScrollExtent){
+        //bottom page
+        fetchLaunch(datas.length.toString());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
 }
